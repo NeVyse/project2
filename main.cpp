@@ -1,98 +1,197 @@
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include "Student.h"
-void addStudent(std::vector<Student>& students) {
-    Student student;
-    std::cin >> student;
-    students.push_back(student);
+#include "container.h"
+#include "student.h"
+#include "check.h"
+#include "sentense_filter.h"
+
+void display_menu() {
+    cout << "\n===== Student Management Menu =====" << endl;
+    cout << "1. Add a student" << endl;
+    cout << "2. Remove a student" << endl;
+    cout << "3. Edit student data" << endl;
+    cout << "4. Display all students" << endl;
+    cout << "5. Sort by average mark" << endl;
+    cout << "6. Show students with good grades" << endl;
+    cout << "0. Exit" << endl;
+    cout << "Enter your choice: ";
 }
-void removeStudent(std::vector<Student>& students, int index) {
-    if (index < 0 || index >= students.size()) {
-        throw std::out_of_range("Некорректный индекс для удаления студента.");
-    }
-    students.erase(students.begin() + index);
-}
-void editStudent(std::vector<Student>& students, int index) {
-    if (index < 0 || index >= students.size()) {
-        throw std::out_of_range("Некорректный индекс для редактирования студента.");
-    }
-    std::cout << "Редактирование студента с индексом " << index << ":" << std::endl;
-    std::cin >> students[index];
-}
-void displayStudentsWithHighGrades(const std::vector<Student>& students) {
-    bool found = false;
-    for (const auto& student : students) {
-        if (std::all_of(student.getGrades().begin(), student.getGrades().end(), [](int grade) { return grade >= 4; })) {
-            std::cout << "Фамилия: " << student.getSurname() << ", Номер группы: " << student.getGroupNumber() << std::endl;
-            found = true;
-        }
-    }
-    if (!found) {
-        std::cout << "Нет студентов с оценками 4 и 5." << std::endl;
-    }
-}
-void sortStudentsByAverageGrade(std::vector<Student>& students) {
-    std::sort(students.begin(), students.end(), [](const Student& a, const Student& b) {
-        return a.averageGrade() < b.averageGrade();
-    });
-}
-int main() {
-    std::vector<Student> students;
+
+int students_program() {
+    Container students;
     int choice;
-    do {
-        std::cout << "Меню:\n";
-        std::cout << "1. Добавить студента\n";
-        std::cout << "2. Удалить студента\n";
-        std::cout << "3. Редактировать студента\n";
-        std::cout << "4. Показать студентов с оценками 4 и 5\n";
-        std::cout << "5. Показать всех студентов\n";
-        std::cout << "6. Сортировать студентов по среднему баллу\n";
-        std::cout << "0. Выйти\n";
-        std::cout << "Введите пункт меню: ";
-        std::cin >> choice;
-        try {
-            switch (choice) {
-                case 1: {
-                    addStudent(students);
-                    break;
+
+    while (true) {
+        display_menu();
+        choice = check_input();
+
+        switch (choice) {
+            case 1: {
+                string name;
+                int number, size;
+                cout << "Enter student's name: ";
+                getline(cin, name);
+                cout << "Enter student's number of the group: ";
+                number = check_input();
+                cout << "Enter the number of marks: ";
+                size = check_input();
+
+                float* marks = new float[size];
+
+                cout << "Enter marks: ";
+                for (int i = 0; i < size; i++) {
+                    cin >> marks[i];
                 }
-                case 2: {
-                    int index;
-                    std::cout << "Введите индекс студента для удаления: ";
-                    std::cin >> index;
-                    removeStudent(students, index);
-                    break;
-                }
-                case 3: {
-                    int index;
-                    std::cout << "Введите индекс студента для редактирования: ";
-                    std::cin >> index;
-                    editStudent(students, index);
-                    break;
-                }
-                case 4: {
-                    displayStudentsWithHighGrades(students);
-                    break;
-                }
-                case 5: {
-                    for (const auto& student : students) {
-                        std::cout << student << std::endl;
-                    }
-                    break;
-                }
-                case 6: {
-                    sortStudentsByAverageGrade(students);
-                    break;
-                }
-                case 0:
-                    break;
-                default:
-                    std::cout << "Некорректный выбор, попробуйте снова." << std::endl;
+
+                cout << "Enter the student's index to add: ";
+                int index = check_input();
+
+                Student* new_student = new Student(name, number, marks, size);
+                students.add_student(new_student, index - 1);
+                cout << "Student added." << endl;
+
+                delete[] marks;
+                break;
             }
-        } catch (const std::exception& e) {
-            std::cerr << "Ошибка: " << e.what() << std::endl;
+            case 2: {
+                int index;
+                cout << "Enter the index of the student to remove: ";
+                index = check_input();
+                try {
+                    students.delete_student(index - 1);
+                    cout << "Student removed." << endl;
+                } catch (const out_of_range& e) {
+                    cout << e.what() << endl;
+                }
+                break;
+            }
+            case 3: {
+                int index;
+                cout << "Enter the index of the student to edit: ";
+                index = check_input();
+                try {
+                    students.edit_student(index - 1);
+                    cout << "Student data updated." << endl;
+                } catch (const out_of_range& e) {
+                    cout << e.what() << endl;
+                }
+                break;
+            }
+            case 4: {
+                students.display_students();
+                break;
+            }
+            case 5: {
+                students.sort_students_by_average_mark();
+                students.display_students();
+                break;
+            }
+            case 6: {
+                students.search_students_with_good_marks();
+                break;
+            }
+            case 0: {
+                cout << "Exiting the program." << endl;
+                return 0;
+            }
+            default: {
+                cout << "Invalid choice! Try again." << endl;
+                break;
+            }
         }
-    } while (choice != 0);
+    }
+
     return 0;
+}
+
+int words_program() {
+    try {
+        int choice;
+        cout << "Select a source (1 - text string, 2 - file): ";
+        if (!(cin >> choice)) {
+            throw invalid_argument("Error: Invalid input for source selection.");
+        }
+
+        cin.ignore();
+        char word[256];
+        cout << "Enter the word to search for: ";
+        cin.getline(word, sizeof(word));
+
+        if (cin.fail()) {
+            throw overflow_error("Error: Exceeded maximum word length.");
+        }
+
+        if (choice == 1) {
+            char text[8192];
+            cout << "Enter the text: ";
+            cin.getline(text, sizeof(text));
+
+            if (cin.fail()) {
+                throw overflow_error("Error: Exceeded maximum text length.");
+            }
+
+            SentenceFilter filter(text, true);
+            filter.result(word);
+        } else if (choice == 2) {
+            char filename[256];
+            cout << "Enter the file name: ";
+            cin >> filename;
+
+            ifstream file(filename);
+            if (!file) {
+                throw runtime_error("Error: File not found or cannot be opened.");
+            }
+            file.close();
+
+            SentenceFilter filter(filename);
+            filter.result(word);
+        } else {
+            throw out_of_range("Error: Selected source does not exist.");
+        }
+    }
+    catch (const invalid_argument& e) {
+        cerr << e.what() << endl;
+        return 1;
+    }
+    catch (const overflow_error& e) {
+        cerr << e.what() << endl;
+        return 2;
+    }
+    catch (const runtime_error& e) {
+        cerr << e.what() << endl;
+        return 3;
+    }
+    catch (const out_of_range& e) {
+        cerr << e.what() << endl;
+        return 4;
+    }
+    catch (...) {
+        cerr << "An unknown error occurred." << endl;
+        return -1;
+    }
+    return 0;
+}
+
+int main() {
+    int choice;
+    while (true) {
+        cout << "Select task type:" << endl;
+        cout << "1 - Standard streams" << endl;
+        cout << "2 - File and text streams" << endl;
+        cout << "3 - Exit" << endl;
+        choice = check_input();
+
+        switch (choice) {
+            case 1:
+                students_program();
+                break;
+            case 2:
+                words_program();
+                break;
+            case 3:
+                cout << "Exiting." << endl;
+                return 0;
+            default:
+                cout << "Invalid choice! Try again." << endl;
+                break;
+        }
+    }
 }
